@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mapa Sul de Minas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>#map { height: 100vh; }</style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([-22.5, -45.5], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const info = L.control();
+    info.onAdd = () => {
+      this._div = L.DomUtil.create('div','info');
+      this.update();
+      return this._div;
+    };
+    info.update = props => {
+      this._div.innerHTML = props ? `<u>${props.name}</u>` : 'Passe o mouse';
+    };
+    info.addTo(map);
+
+    function estilo(f) { return { color:'#333', weight:1, fillColor:'#a2c0e8', fillOpacity:0.6 }; }
+    function destaque(e) { const l=e.target; l.setStyle({weight:3,fillOpacity:0.9}); info.update(l.feature.properties); }
+    function reset(e) { geojson.resetStyle(e.target); info.update(); }
+    function zoom(e) { map.fitBounds(e.target.getBounds()); }
+    function onEach(f,l) {
+      l.on({mouseover:destaque,mouseout:reset,click:zoom});
+      l.bindPopup(`<strong>${f.properties.name}</strong>`);
+    }
+
+    fetch('sul-de-minas-municipios.json')
+      .then(r=>r.json())
+      .then(data => {
+        window.geojson = L.geoJson(data,{ style: estilo, onEachFeature: onEach }).addTo(map);
+      });
+  </script>
+</body>
+</html>
